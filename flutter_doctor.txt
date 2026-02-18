@@ -1,0 +1,45 @@
+[!] Flutter (Channel stable, 3.38.5, on Microsoft Windows [Version 10.0.26200.7840], locale en-IN) [1,309ms]
+    • Flutter version 3.38.5 on channel stable at C:\tools\flutter
+    ! Warning: `flutter` on your path resolves to C:\src\flutter\bin\flutter, which is not inside your current Flutter SDK checkout at C:\tools\flutter. Consider adding C:\tools\flutter\bin to the front of your path.
+    ! Warning: `dart` on your path resolves to C:\src\flutter\bin\dart, which is not inside your current Flutter SDK checkout at C:\tools\flutter. Consider adding C:\tools\flutter\bin to the front of your path.
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision f6ff1529fd (10 weeks ago), 2025-12-11 11:50:07 -0500
+    • Engine revision 1527ae0ec5
+    • Dart version 3.10.4
+    • DevTools version 2.51.1
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+    • If those were intentional, you can disregard the above warnings; however it is recommended to use "git" directly to perform update checks and upgrades.
+
+[☠] Windows Version (the doctor check crashed)
+    X Due to an error, the doctor check did not complete. If the error message below is not helpful, please let us know about this issue at https://github.com/flutter/flutter/issues.
+    X Exception: Windows Version exceeded maximum allowed duration of 0:04:30.000000
+    • 
+
+[!] Android toolchain - develop for Android devices (Android SDK version 36.0.0) [1,268ms]
+    • Android SDK at C:\Users\Kavya\AppData\Local\Android\sdk
+    • Emulator version 35.6.11.0 (build_id 13610412) (CL:N/A)
+    X cmdline-tools component is missing.
+      Try installing or updating Android Studio.
+      Alternatively, download the tools from https://developer.android.com/studio#command-line-tools-only and make sure to set the ANDROID_HOME environment variable.
+      See https://developer.android.com/studio/command-line for more details.
+    X Android license status unknown.
+      Run `flutter doctor --android-licenses` to accept the SDK licenses.
+      See https://flutter.dev/to/windows-android-setup for more details.
+
+[√] Chrome - develop for the web [414ms]
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[√] Visual Studio - develop Windows apps (Visual Studio Build Tools 2022 17.14.9 (July 2025)) [411ms]
+    • Visual Studio at C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools
+    • Visual Studio Build Tools 2022 version 17.14.36310.24
+    • Windows 10 SDK version 10.0.26100.0
+
+[√] Connected device (3 available) [569ms]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.7840]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 144.0.7559.133
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 144.0.3719.115
+
+[√] Network resources [1,029ms]
+    • All expected network resources are available.
+
+! Doctor found issues in 3 categories.

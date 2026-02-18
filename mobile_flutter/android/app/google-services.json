@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "533580524636",
+    "firebase_url": "https://ailens-487617.firebaseio.com",
+    "project_id": "ailens-487617",
+    "storage_bucket": "ailens-487617.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533580524636:android:ce20626bd6af2606",
+        "android_client_info": {
+          "package_name": "com.example.ailens"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "533580524636-om06c72ge6doe8va12el3r25ovg4t1r4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1l3Z2V5X3n9q7r2s5t8u1w2x3y4z5a6b"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "533580524636-om06c72ge6doe8va12el3r25ovg4t1r4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
