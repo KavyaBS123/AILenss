@@ -1,10 +1,13 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 from app.core.config import settings
-from app.core.database import create_db_and_tables, engine
+from app.core.database import engine
+from app.core.file_storage import FileStorageManager
 from app.api.routes import api_router
-from app.models import User
+# Import all models to ensure they are registered with SQLModel
+from app.models.user import User
+from app.models.face import FaceData
 
 # Create FastAPI app
 app = FastAPI(
@@ -14,10 +17,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Create tables on startup
 @app.on_event("startup")
 def on_startup():
+    # Create all tables in the database
     SQLModel.metadata.create_all(engine)
+    FileStorageManager.initialize()
 
 # Add CORS middleware
 app.add_middleware(

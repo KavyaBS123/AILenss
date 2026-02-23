@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ailens-postgres
+    environment:
+      POSTGRES_DB: ailens_db
+      POSTGRES_USER: ailens_user
+      POSTGRES_PASSWORD: ailens_password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ailens_user -d ailens_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ailens_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ailens-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@ailens.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - ailens_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  ailens_network:
+    driver: bridge

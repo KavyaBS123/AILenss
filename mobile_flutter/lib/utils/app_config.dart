@@ -42,8 +42,9 @@ class AppConfig {
   }
 
   String _getDefaultApiUrl() {
-    // Default for Android emulator
-    return 'http://10.0.2.2:5000/api';
+    // ADB port forwarding: localhost:5000 on phone tunnels to computer's port 5000
+    // Backend listens on 0.0.0.0:5000 so localhost:5000 will work via tunnel
+    return 'http://localhost:5000/api';
   }
 
   // Getters
@@ -71,7 +72,7 @@ class AppConfig {
       (dotenv.env['ENABLE_NETWORK_LOGS'] ?? 'false').toLowerCase() == 'true';
 
   Duration get apiTimeout =>
-      Duration(seconds: int.parse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '30'));
+      Duration(seconds: int.parse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '15'));
 
   // Biometric configuration
   String get cameraQuality => dotenv.env['CAMERA_QUALITY'] ?? 'High';

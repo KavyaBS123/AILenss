@@ -1,49 +1,50 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID, uuid4
+from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.sql import func
 from sqlmodel import SQLModel, Field
 
+
 class User(SQLModel, table=True):
-    """User model with biometric data storage"""
+    """User model with biometric file paths."""
+
     __tablename__ = "users"
-    
-    # Basic user info
-    id: Optional[int] = Field(default=None, primary_key=True)
-    email: str = Field(unique=True, index=True)
-    first_name: str
-    last_name: str
-    phone: str
-    hashed_password: str
-    
-    # Account status
-    is_active: bool = Field(default=True)
-    is_verified: bool = Field(default=False)
-    
-    # Authentication
-    otp: Optional[str] = Field(default=None)
-    otp_created_at: Optional[datetime] = Field(default=None)
-    
-    # Biometric data - Face recognition
-    face_data: Optional[str] = Field(default=None)  # Stored as JSON or base64
-    face_embedding: Optional[str] = Field(default=None)  # Face embedding vector
-    face_registered: bool = Field(default=False)
-    
-    # Biometric data - Voice recognition
-    voice_data: Optional[str] = Field(default=None)  # Stored as base64 or file path
-    voice_embedding: Optional[str] = Field(default=None)  # Voice embedding vector
-    voice_registered: bool = Field(default=False)
-    
-    # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    face_registered_at: Optional[datetime] = Field(default=None)
-    voice_registered_at: Optional[datetime] = Field(default=None)
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "email": "user@example.com",
-                "first_name": "John",
-                "last_name": "Doe",
-                "phone": "+1234567890",
-            }
-        }
+
+    id: UUID = Field(
+        default_factory=uuid4,
+        sa_column=Column(PG_UUID(as_uuid=True), primary_key=True),
+    )
+    name: str = Field(index=True)
+    email: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, unique=True, index=True, nullable=True),
+    )
+    phone_number: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, unique=True, index=True, nullable=True),
+    )
+    google_id: Optional[str] = Field(default=None, index=True)
+    hashed_password: Optional[str] = Field(default=None)
+
+    is_active: bool = Field(
+        default=True,
+        sa_column=Column(Boolean, nullable=False, server_default="true"),
+    )
+    is_verified: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, server_default="false"),
+    )
+
+    face_data_path: Optional[str] = Field(default=None)
+    voice_data_path: Optional[str] = Field(default=None)
+
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now()),
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now()),
+    )
