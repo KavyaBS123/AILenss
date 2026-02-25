@@ -42,9 +42,8 @@ class AppConfig {
   }
 
   String _getDefaultApiUrl() {
-    // ADB port forwarding: localhost:5000 on phone tunnels to computer's port 5000
-    // Backend listens on 0.0.0.0:5000 so localhost:5000 will work via tunnel
-    return 'http://localhost:5000/api';
+    // Use PC's LAN IP for physical device access
+    return 'http://192.168.1.7:5000/api';
   }
 
   // Getters

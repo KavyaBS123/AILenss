@@ -19,13 +19,13 @@ class FaceData(SQLModel, table=True):
 
     __tablename__ = "face_data"
 
-    id: UUID = Field(
-        default_factory=uuid4,
-        sa_column=Column(PG_UUID(as_uuid=True), primary_key=True),
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        sa_column=Column(String(36), primary_key=True),
     )
     
-    user_id: UUID = Field(
-        sa_column=Column(PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    user_id: str = Field(
+        sa_column=Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         index=True,
     )
     

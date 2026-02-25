@@ -1,63 +1,34 @@
-from pathlib import Path
 from typing import List
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from pydantic import BaseSettings
 
 class Settings(BaseSettings):
+    DATABASE_URL: str
     """Application settings loaded from environment variables"""
-
-    model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[2] / ".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore",
-    )
-
     PROJECT_NAME: str = "AILens"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
-
-    # Database Configuration
-    DATABASE_URL: str
-
-    # Security Configuration
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-
-    # OTP Configuration
     OTP_EXPIRY_MINUTES: int = 10
-
-    # Email Configuration (SMTP)
-    SMTP_SERVER: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
+    SMTP_SERVER: str = "smtp.zoho.com"
+    SMTP_PORT: int = 465
     SMTP_EMAIL: str = "kavya.bs@contentlens.ai"
-    SMTP_PASSWORD: str = ""  # Set via environment variable or .env file
-
-    # CORS Configuration
+    SMTP_PASSWORD: str = "78Quq2ZSBk2u"  # Set via environment variable or .env file
     CORS_ORIGINS: List[str] = ["*"]
-
-    # API Configuration
     API_STR: str = "/api"
-
-    # File Storage Configuration
     STORAGE_DIR: str = "./storage"
     FACE_DATA_DIR: str = "face_data"
     VOICE_DATA_DIR: str = "voice_data"
     TEMP_DIR: str = "temp"
     MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "wav", "mp3", "mp4", "mov"]
-
-    # Google OAuth Configuration
     GOOGLE_CLIENT_ID: str
-
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value):
-        if isinstance(value, str):
-            return [item.strip() for item in value.split(",") if item.strip()]
-        return value
-
+    class Config:
+        env_file = "../.env"
+        # Also try loading from backend_fastapi/.env if present
+        import os
+        if os.path.exists(os.path.join(os.path.dirname(__file__), '../../backend_fastapi/.env')):
+            env_file = os.path.join(os.path.dirname(__file__), '../../backend_fastapi/.env')
+        env_file_encoding = "utf-8"
+        case_sensitive = True
 
 settings = Settings()
