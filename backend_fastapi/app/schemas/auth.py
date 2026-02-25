@@ -53,6 +53,10 @@ class EmailSendOtpRequest(BaseModel):
     email: EmailStr
     name: Optional[str] = None  # Name for new user account creation
 
+    def __init__(self, **data):
+        print("EmailSendOtpRequest instantiated with:", data)
+        super().__init__(**data)
+
 
 class EmailSendOtpResponse(BaseModel):
     """Response for sending OTP to email"""

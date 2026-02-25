@@ -1,3 +1,5 @@
+
+print("IMPORT OK")
 from datetime import timedelta
 import os
 from pathlib import Path
@@ -28,6 +30,94 @@ from app.services.google_auth import verify_google_id_token
 from app.services.otp_service import OtpService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+@router.post("/email/send-otp-test", response_model=EmailSendOtpResponse)
+def send_email_otp_test(payload: EmailSendOtpRequest, session: Session = Depends(get_session)):
+    """Send OTP to email for verification (test endpoint)"""
+    print('A')
+    import logging
+    print('B')
+    print("send_email_otp_test called with:", payload)
+    from app.services.email_service import EmailService
+    print('C')
+    logger = logging.getLogger(__name__)
+    print('D')
+    print('REACHED OTP ENDPOINT')
+    print('E')
+    normalized_email = payload.email.strip().lower()
+    print('F')
+    logger.info(f"📧 OTP request for email: {normalized_email}")
+    print('G')
+    existing_user = user_crud.get_by_email(session, normalized_email)
+    print('H')
+    user_exists = existing_user is not None
+    print('I')
+    import traceback
+    print('J')
+    try:
+        print('K')
+        otp_code = OtpService.send_otp(normalized_email)
+        print('L')
+        logger.info(f"✓ OTP generated: {otp_code}")
+        print('M')
+        email_sent = EmailService.send_otp_email(normalized_email, otp_code)
+        print('N')
+        if not email_sent:
+            logger.error(f"❌ Failed to send OTP email to: {normalized_email}")
+            print('O')
+            print('FAILED TO SEND OTP EMAIL')
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send OTP email. Please try again."
+            )
+    except Exception as e:
+        print('P')
+        logger.error(f"❌ Exception in send_email_otp_test: {e}")
+        print("\n--- TRACEBACK ---\n" + traceback.format_exc() + "\n--- END TRACEBACK ---\n")
+        traceback.print_exc()
+        print(f"EXCEPTION: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal Server Error: {e}"
+        )
+    if user_exists:
+        print('Q')
+        logger.info(f"✓ User exists for email: {normalized_email} - OTP for sign in")
+        message = "OTP sent to your Gmail inbox. Please verify to sign in."
+    else:
+        print('R')
+        logger.info(f"👤 New user for email: {normalized_email} - OTP for registration")
+        message = "OTP sent to your Gmail inbox. Please verify to create account."
+    print('S')
+    print('OTP ENDPOINT SUCCESS')
+    return EmailSendOtpResponse(
+        success=True,
+        message=message,
+        user_exists=user_exists
+    )
+from app.core.security import create_access_token, get_password_hash, decode_access_token
+from app.core.database import get_session
+from app.crud import user as user_crud
+from app.crud import face as face_crud
+from app.schemas.auth import (
+    GoogleLoginRequest,
+    GoogleSignInResponse,
+    GoogleUserInfo,
+    RegistrationRequest,
+    EmailAuthRequest,
+    EmailCheckResponse,
+    EmailSendOtpRequest,
+    EmailSendOtpResponse,
+    EmailVerifyOtpRequest,
+    PhoneSendOtpRequest,
+    PhoneSendOtpResponse,
+    PhoneVerifyOtpRequest,
+    AuthResponse,
+    TokenResponse,
+)
+from app.services.google_auth import verify_google_id_token
+from app.services.otp_service import OtpService
+
 
 
 @router.post("/google", response_model=GoogleSignInResponse)
@@ -474,18 +564,29 @@ def send_email_otp(payload: EmailSendOtpRequest, session: Session = Depends(get_
     existing_user = user_crud.get_by_email(session, normalized_email)
     user_exists = existing_user is not None
     
-    # Generate OTP and store it
-    otp_code = OtpService.send_otp(normalized_email)
-    logger.info(f"✓ OTP generated: {otp_code}")
-    
-    # Send OTP email
-    email_sent = EmailService.send_otp_email(normalized_email, otp_code)
-    
-    if not email_sent:
-        logger.error(f"❌ Failed to send OTP email to: {normalized_email}")
+    print('REACHED OTP ENDPOINT')
+    import traceback
+    try:
+        # Generate OTP and store it
+        otp_code = OtpService.send_otp(normalized_email)
+        logger.info(f"✓ OTP generated: {otp_code}")
+
+        # Send OTP email
+        email_sent = EmailService.send_otp_email(normalized_email, otp_code)
+
+        if not email_sent:
+            logger.error(f"❌ Failed to send OTP email to: {normalized_email}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send OTP email. Please try again."
+            )
+    except Exception as e:
+        logger.error(f"❌ Exception in send_email_otp: {e}")
+        print("\n--- TRACEBACK ---\n" + traceback.format_exc() + "\n--- END TRACEBACK ---\n")
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send OTP email. Please try again."
+            detail=f"Internal Server Error: {e}"
         )
     
     if user_exists:
