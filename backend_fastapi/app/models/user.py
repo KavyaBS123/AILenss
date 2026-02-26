@@ -12,9 +12,9 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
 
-    id: str = Field(
-        default_factory=lambda: str(uuid4()),
-        sa_column=Column(String(36), primary_key=True),
+    id: UUID = Field(
+        default_factory=uuid4,
+        sa_column=Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4),
     )
     name: str = Field(index=True)
     email: Optional[str] = Field(

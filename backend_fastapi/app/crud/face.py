@@ -5,17 +5,19 @@ from app.models.face import FaceData
 
 def create_face_record(
     session: Session,
-    user_id: UUID,
+    user_id: str,
     face_type: str,
     file_path: str,
     file_name: str,
+    embedding: list[float] = None,
 ) -> FaceData:
-    """Create a new face record."""
+    """Create a new face record with optional embedding."""
     face_data = FaceData(
         user_id=user_id,
         face_type=face_type,
         file_path=file_path,
         file_name=file_name,
+        embedding=embedding if embedding is not None else None,
     )
     session.add(face_data)
     session.commit()
@@ -31,7 +33,7 @@ def get_user_faces(session: Session, user_id: UUID) -> list[FaceData]:
 
 def get_face_by_type(
     session: Session,
-    user_id: UUID,
+    user_id: str,
     face_type: str,
 ) -> FaceData | None:
     """Get a specific face record by type."""
