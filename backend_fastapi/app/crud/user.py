@@ -1,7 +1,9 @@
+
 from typing import Optional
 from sqlmodel import Session, select
 from app.models.user import User
 from app.core.security import verify_password
+
 
 
 def get_by_email(session: Session, email: str) -> Optional[User]:
@@ -46,9 +48,16 @@ def create_user(
         hashed_password=hashed_password,
         is_verified=is_verified,
     )
-    session.add(user)
-    session.commit()
-    session.refresh(user)
+    try:
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    except Exception as e:
+        session.rollback()
+        print("DB ERROR:", str(e))
+        import traceback
+        print(traceback.format_exc())
+        raise
     return user
 
 

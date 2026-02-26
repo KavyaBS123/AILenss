@@ -9,13 +9,28 @@ from fastapi.exceptions import RequestValidationError as FastAPIRequestValidatio
 import traceback
 
 
+
+
+# Ensure all models are imported so SQLModel metadata is populated
+from .core.database import engine
+from sqlmodel import SQLModel
+from app import models  # This imports __init__.py, which imports all models
+
 app = FastAPI(debug=True)
 app.include_router(api_router)
 
-# Print all registered routes at startup
+
+# On startup: create all tables and print routes
 @app.on_event("startup")
-async def print_routes():
-    print("\n--- REGISTERED ROUTES ---")
+async def on_startup():
+    print("\n--- RUNNING STARTUP HOOK ---")
+    # Create all tables (including face_data)
+    try:
+        SQLModel.metadata.create_all(engine)
+        print("[DB] Tables created or already exist.")
+    except Exception as e:
+        print(f"[DB ERROR] Table creation failed: {e}")
+    print("--- REGISTERED ROUTES ---")
     for route in app.routes:
         print(f"{route.path} -> {route.name}")
     print("--- END ROUTES ---\n")

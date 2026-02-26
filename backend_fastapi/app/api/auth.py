@@ -1,4 +1,3 @@
-
 print("IMPORT OK")
 from datetime import timedelta
 import os
@@ -59,13 +58,10 @@ def send_email_otp_test(payload: EmailSendOtpRequest, session: Session = Depends
         otp_code = OtpService.send_otp(normalized_email)
         print('L')
         logger.info(f"✓ OTP generated: {otp_code}")
-        print('M')
         email_sent = EmailService.send_otp_email(normalized_email, otp_code)
         print('N')
         if not email_sent:
             logger.error(f"❌ Failed to send OTP email to: {normalized_email}")
-            print('O')
-            print('FAILED TO SEND OTP EMAIL')
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to send OTP email. Please try again."
@@ -167,47 +163,65 @@ def google_login(payload: GoogleLoginRequest, session: Session = Depends(get_ses
 
     # Check if user exists (with timeout protection)
     user = None
-    try:
-        if google_id:
-            logger.info(f"Checking user by Google ID...")
-            user = user_crud.get_by_google_id(session, google_id)
-        if not user and email:
-            logger.info(f"Checking user by email...")
-            user = user_crud.get_by_email(session, email)
-    except Exception as db_error:
-        logger.warning(f"Database check failed (DB offline?): {str(db_error)}. Proceeding with default response.")
-        # Continue anyway - don't block on DB failures
-
-    if user:
-        # User exists - create token for auto sign-in
-        logger.info(f"✓ User exists with ID: {user.id}")
-        token = create_access_token(
-            data={"sub": str(user.id)},
-            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        )
-        return GoogleSignInResponse(
-            success=True,
-            user_exists=True,
-            user_id=str(user.id),
-            token=token,
-            name=user.name,
-            email=user.email,
-            phone_number=user.phone_number,
-        )
+    user_exists = False
+    normalized_email = email.strip().lower() if email else None
+    if google_id:
+        logger.info(f"Checking user by Google ID...")
+        user = user_crud.get_by_google_id(session, google_id)
+    if not user and normalized_email:
+        logger.info(f"Checking user by email...")
+        user = user_crud.get_by_email(session, normalized_email)
+    if not user:
+        # Create new user with provided name or default
+        user_name = name or "Email User"
+        logger.info(f"👤 Creating new user with name: {user_name}")
+        try:
+            user = user_crud.create_user(
+                session,
+                name=user_name,
+                email=normalized_email,
+                google_id=google_id,  # Save google_id from token
+                is_verified=True,
+            )
+            user_exists = False
+        except Exception as e:
+            # If user was created between check and creation, fetch and sign them in
+            logger.warning(f"⚠️ User creation failed (likely duplicate): {e}")
+            session.rollback()
+            user = user_crud.get_by_email(session, normalized_email)
+            if not user:
+                raise HTTPException(status_code=500, detail="Failed to create user")
+            user_exists = True
     else:
-        # New user OR DB offline - return Google info for registration form
-        logger.info(f"📝 New user (or DB offline) - requesting registration for: {email}")
-        return GoogleSignInResponse(
-            success=True,
-            user_exists=False,
-            google_info=GoogleUserInfo(
-                google_id=google_id or "",
-                email=email or "",
-                name=name,
-            ),
-            message="User not found. Please complete registration.",
-        )
+        # Update existing user with name from Google if needed
+        if name and user.name in ["Email User", "Google User"]:
+            user.name = name
+        # Update google_id if not already set
+        if google_id and not user.google_id:
+            user.google_id = google_id
+        user.is_verified = True
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        user_exists = True
 
+    # Always return a valid GoogleSignInResponse
+    # Defensive: never return None for any field, use empty string if missing
+    # Generate JWT token for the user
+    token = ""
+    if user and user.id:
+        token = create_access_token(data={"sub": str(user.id)})
+    return GoogleSignInResponse(
+        success=True,
+        user_exists=user_exists,
+        user_id=str(user.id) if user and user.id else "",
+        name=user.name if user and user.name else user_name or "",
+        email=user.email if user and user.email else normalized_email or "",
+        phone_number=user.phone_number if user and user.phone_number else "",
+        message="User signed in successfully" if user_exists else "User registered successfully",
+        token=token,
+        google_info=None
+    )
 
 @router.post("/register", response_model=AuthResponse)
 def register_user(payload: RegistrationRequest, session: Session = Depends(get_session)):
@@ -373,19 +387,21 @@ def email_sign_in(payload: EmailAuthRequest, session: Session = Depends(get_sess
         )
 
 
+from fastapi import Form
+import json
+
 @router.post("/upload-face")
 def upload_face_image(
     file: UploadFile = File(...),
-    face_type: str = "straight",
+    face_type: str = Form("straight"),
+    embedding: str = Form(None),
     session: Session = Depends(get_session),
     authorization: str = Header(None),
 ):
-    """Upload a face image for the current user."""
+    """Upload a face image for the current user, with optional embedding vector."""
     import logging
     from uuid import UUID
-    
     logger = logging.getLogger(__name__)
-
     try:
         # Extract token from Authorization header
         if not authorization or not authorization.startswith("Bearer "):
@@ -393,72 +409,70 @@ def upload_face_image(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Authorization header missing or invalid",
             )
-
-        token = authorization[7:]  # Remove "Bearer " prefix
-        
+        token = authorization[7:]
         logger.info(f"📸 Processing face image upload: {face_type}")
-
         payload = decode_access_token(token)
         if not payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
-
         user_id_str = payload.get("sub")
         if not user_id_str:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
-
         user_id = UUID(user_id_str)
         current_user = user_crud.get_user(session, user_id)
-        
         if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-
         logger.info(f"📸 Uploading face image for user: {current_user.id}")
-
-        # Create faces directory if it doesn't exist
         faces_dir = Path("uploads/faces")
         faces_dir.mkdir(parents=True, exist_ok=True)
-
-        # Generate filename with user ID and timestamp
         import time
         filename = f"{current_user.id}_{int(time.time() * 1000)}.jpg"
         filepath = faces_dir / filename
-
-        # Save the file
         contents = file.file.read()
         with open(filepath, "wb") as f:
             f.write(contents)
-
         logger.info(f"✓ Face image saved: {filepath}")
-        
-        # Save metadata to database
+        # Parse embedding if provided
+        embedding_list = None
+        if embedding:
+            try:
+                embedding_list = json.loads(embedding)
+            except Exception as emb_err:
+                logger.error(f"Invalid embedding JSON: {emb_err}")
         try:
             face_record = face_crud.create_face_record(
                 session,
-                user_id=current_user.id,
+                user_id=str(current_user.id),
                 face_type=face_type,
                 file_path=str(filepath),
                 file_name=filename,
+                embedding=embedding_list,
             )
             logger.info(f"✓ Face record created in DB: {face_record.id}")
         except Exception as db_error:
             logger.error(f"⚠️  File saved but DB record failed: {str(db_error)}")
-            # Continue anyway - file is saved even if DB record fails
-        
+            # Remove the saved file if DB insert fails
+            try:
+                os.remove(filepath)
+            except Exception as file_rm_err:
+                logger.error(f"Failed to remove file after DB error: {file_rm_err}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save face record to database: {str(db_error)}",
+            )
         return {
             "success": True,
             "message": "Face image uploaded successfully",
             "filename": filename,
         }
-
     except HTTPException:
         raise
     except Exception as e:
@@ -626,9 +640,10 @@ def verify_email_otp(payload: EmailVerifyOtpRequest, session: Session = Depends(
                 session,
                 name=user_name,
                 email=normalized_email,
-                google_id=payload.google_id,  # Save google_id if provided
+                google_id=getattr(payload, 'google_id', None),  # Save google_id if provided
                 is_verified=True,
             )
+            user_exists = False
         except Exception as e:
             # If user was created between check and creation, fetch and sign them in
             logger.warning(f"⚠️ User creation failed (likely duplicate): {e}")
@@ -636,17 +651,19 @@ def verify_email_otp(payload: EmailVerifyOtpRequest, session: Session = Depends(
             user = user_crud.get_by_email(session, normalized_email)
             if not user:
                 raise HTTPException(status_code=500, detail="Failed to create user")
+            user_exists = True
     else:
         # Update existing user with name if provided
         if payload.name and user.name in ["Email User", "Google User"]:
             user.name = payload.name
         # Update google_id if provided and not already set
-        if payload.google_id and not user.google_id:
+        if hasattr(payload, 'google_id') and payload.google_id and not user.google_id:
             user.google_id = payload.google_id
         user.is_verified = True
         session.add(user)
         session.commit()
         session.refresh(user)
+        user_exists = True
 
     logger.info(f"✓ OTP verified for user: {user.id}")
 
@@ -664,4 +681,5 @@ def verify_email_otp(payload: EmailVerifyOtpRequest, session: Session = Depends(
         name=user.name,
         email=user.email,
         phone_number=user.phone_number,
+        user_exists=user_exists,
     )

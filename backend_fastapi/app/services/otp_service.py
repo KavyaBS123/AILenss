@@ -18,13 +18,12 @@ class OtpService:
     def send_otp(cls, identifier: str) -> str:
         """
         Generate and store OTP for given identifier (phone or email)
-        Hardcoded OTP for dev: always '123456'.
         Args:
             identifier: Phone number or email address
         Returns:
             str: Generated OTP code
         """
-        otp_code = '123456'
+        otp_code = cls.generate_otp()
         expires_at = datetime.utcnow() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES)
         cls._store[identifier] = (otp_code, expires_at)
         return otp_code

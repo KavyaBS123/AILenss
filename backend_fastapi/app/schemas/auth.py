@@ -15,15 +15,15 @@ class GoogleUserInfo(BaseModel):
 
 class GoogleSignInResponse(BaseModel):
     """Response for Google Sign-In that checks user existence"""
-    success: bool
-    user_exists: bool
-    user_id: Optional[str] = None
+    success: Optional[bool] = False
+    user_exists: Optional[bool] = False
+    user_id: Optional[str] = ""
     token: Optional[str] = None  # Only for existing users
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone_number: Optional[str] = None
+    name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone_number: Optional[str] = ""
     google_info: Optional[GoogleUserInfo] = None  # For new users, pre-fill registration form
-    message: Optional[str] = None
+    message: Optional[str] = ""
 
 
 class RegistrationRequest(BaseModel):
@@ -103,3 +103,4 @@ class AuthResponse(BaseModel):
     name: str
     email: Optional[str] = None
     phone_number: Optional[str] = None
+    user_exists: bool  # True if user already existed, False if just created
